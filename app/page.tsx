@@ -11,7 +11,6 @@ const WATCH_STORAGE_KEY = 'poe2-watch-conditions';
 const WATCH_DAILY_LIMIT_KEY = 'poe2-watch-daily-register-limit';
 const MAX_WATCH_SLOT_COUNT = 4;
 const SHOW_DEV_CLEAR_BUTTON = false;
-const SHOW_AD_SECTION = false;
 
 export default function HomePage() {
   const [watchConditions, setWatchConditions] = useState<WatchCondition[]>([]);
@@ -205,22 +204,6 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-        {SHOW_AD_SECTION ? (
-          <section className="rounded-3xl border border-slate-800 bg-slate-950/60 p-4 shadow-xl shadow-black/20">
-            <div className="flex min-h-[100px] items-center justify-center rounded-2xl border border-dashed border-slate-700/70 bg-slate-900/50 px-4 text-center">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-600">
-                  Advertisement
-                </p>
-
-                <p className="mt-2 text-sm font-semibold text-slate-500">
-                  애드센스 광고 영역
-                </p>
-              </div>
-            </div>
-          </section>
-        ) : null}
 
         <section className="flex flex-col gap-4">
           <div className="rounded-[1.8rem] border border-slate-800 bg-slate-950/70 p-5 md:p-6">
