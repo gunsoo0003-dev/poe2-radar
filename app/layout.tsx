@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   publisher: 'POE2 SEARCH RADAR',
   applicationName: 'POE2 SEARCH RADAR',
   category: 'tool',
-  metadataBase: new URL('https://poe2-search-radar.com'),
+  metadataBase: new URL('https://fixlgs.com'),
   alternates: {
     canonical: '/',
   },
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     title: 'POE2 SEARCH RADAR | Path of Exile 2 Trade Search Monitor',
     description:
       'Register your POE2 official trade search URL, detect new listings, and monitor lowest price changes.',
-    url: 'https://poe2-search-radar.com',
+    url: 'https://fixlgs.com',
     siteName: 'POE2 SEARCH RADAR',
     locale: 'ko_KR',
     type: 'website',
