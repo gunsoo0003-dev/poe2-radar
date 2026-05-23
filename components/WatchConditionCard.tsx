@@ -56,32 +56,90 @@ type WatchConditionCardProps = {
 
 type FetchStatus = 'idle' | 'loading' | 'success' | 'error';
 
+type AlertSettings = {
+  priceDropAlertEnabled?: boolean;
+  priceDropPercent?: string;
+  targetPriceAlertEnabled?: boolean;
+  targetPriceAmount?: string;
+  targetPriceCurrency?: string;
+};
+
 const AUTO_REFRESH_MINUTES = 10;
 const AUTO_REFRESH_INTERVAL_MS = AUTO_REFRESH_MINUTES * 60 * 1000;
+const ALERT_SETTINGS_KEY = 'poe2-watch-alert-settings';
 
 function getAlertReason({
-  priceChangeStatus,
   newItemStatus,
+  currentLowestPrice,
+  previousLowestPrice,
+  currentLowestCurrency,
 }: {
-  priceChangeStatus: PriceChangeStatus;
   newItemStatus: NewItemStatus;
+  currentLowestPrice: number | null;
+  previousLowestPrice: number | null;
+  currentLowestCurrency: string | null;
 }): WatchAlertReason | null {
-  const isPriceDown = priceChangeStatus === 'down';
-  const isNewItemDetected = newItemStatus === 'detected';
+  const savedSettings = localStorage.getItem(ALERT_SETTINGS_KEY);
 
-  if (isPriceDown && isNewItemDetected) {
-    return 'priceDownAndNewItem';
+  if (!savedSettings) {
+    return null;
   }
 
-  if (isPriceDown) {
-    return 'priceDown';
-  }
+  try {
+    const settings = JSON.parse(savedSettings) as AlertSettings;
 
-  if (isNewItemDetected) {
-    return 'newItem';
-  }
+    const priceDropAlertEnabled = settings.priceDropAlertEnabled === true;
+    const targetPriceAlertEnabled = settings.targetPriceAlertEnabled === true;
 
-  return null;
+    if (!priceDropAlertEnabled && !targetPriceAlertEnabled) {
+      return null;
+    }
+
+    const currentPrice =
+      typeof currentLowestPrice === 'number' ? currentLowestPrice : null;
+
+    const previousPrice =
+      typeof previousLowestPrice === 'number' ? previousLowestPrice : null;
+
+    const dropPercentSetting = Number(settings.priceDropPercent);
+    const targetPrice = Number(settings.targetPriceAmount);
+
+    const targetCurrency = String(
+      settings.targetPriceCurrency || '',
+    ).toLowerCase();
+
+    const currentCurrency = String(currentLowestCurrency || '').toLowerCase();
+
+    const isNewItemDetected = newItemStatus === 'detected';
+
+    const isPriceDropConditionMet =
+      priceDropAlertEnabled &&
+      previousPrice !== null &&
+      currentPrice !== null &&
+      previousPrice > 0 &&
+      dropPercentSetting > 0 &&
+      ((previousPrice - currentPrice) / previousPrice) * 100 >=
+        dropPercentSetting;
+
+    const isTargetPriceConditionMet =
+      targetPriceAlertEnabled &&
+      currentPrice !== null &&
+      targetPrice > 0 &&
+      currentPrice <= targetPrice &&
+      (!targetCurrency || !currentCurrency || targetCurrency === currentCurrency);
+
+    if (isPriceDropConditionMet && isNewItemDetected) {
+      return 'priceDownAndNewItem';
+    }
+
+    if (isPriceDropConditionMet || isTargetPriceConditionMet) {
+      return 'priceDown';
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 export default function WatchConditionCard({
@@ -149,17 +207,23 @@ export default function WatchConditionCard({
 
   const trySendAlert = useCallback(
     async ({
-      nextPriceChangeStatus,
       nextNewItemStatus,
+      previousPrice,
+      nextLowestPrice,
+      nextLowestCurrency,
       priceText,
     }: {
-      nextPriceChangeStatus: PriceChangeStatus;
       nextNewItemStatus: NewItemStatus;
+      previousPrice: number | null;
+      nextLowestPrice: number | null;
+      nextLowestCurrency: string | null;
       priceText: string;
     }) => {
       const alertReason = getAlertReason({
-        priceChangeStatus: nextPriceChangeStatus,
         newItemStatus: nextNewItemStatus,
+        currentLowestPrice: nextLowestPrice,
+        previousLowestPrice: previousPrice,
+        currentLowestCurrency: nextLowestCurrency,
       });
 
       if (!alertReason) {
@@ -287,8 +351,10 @@ export default function WatchConditionCard({
       updateNewItemDetectedCount(nextDetectedCount);
 
       await trySendAlert({
-        nextPriceChangeStatus: nextChangeStatus,
         nextNewItemStatus,
+        previousPrice,
+        nextLowestPrice,
+        nextLowestCurrency,
         priceText: nextPriceText,
       });
 
@@ -560,8 +626,8 @@ export default function WatchConditionCard({
               </p>
 
               <p className="mt-1 text-xs leading-5 text-slate-500">
-                조건 달성 시 슬롯별 1회만 알림이 울립니다. 다시 받으려면 알림
-                재설정이 필요합니다.
+                알림 설정 화면에서 켠 조건이 달성될 때만 알림이 울립니다. 다시
+                받으려면 알림 재설정이 필요합니다.
               </p>
             </div>
 
